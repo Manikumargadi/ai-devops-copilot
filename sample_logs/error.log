@@ -1,0 +1,3 @@
+Kubernetes pod crashed due to OOMKilled.
+Container exceeded memory limit.
+Restart count: 5
