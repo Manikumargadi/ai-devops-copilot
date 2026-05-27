@@ -8,7 +8,7 @@ import json
 load_dotenv()
 
 # OpenAI client
-client = OpenAI(api_key=st.secrets("OPENAI_API_KEY"))
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 # Page config
 st.set_page_config(
