@@ -1,0 +1,20 @@
+2026-05-04T14:22:10Z kubelet: Pod payment-api-6f8d9 crashed
+Reason: OOMKilled
+Container memory limit exceeded
+Restart count: 6
+
+2026-05-04T14:22:12Z WARNING High CPU usage detected
+Service: payment-api
+CPU Usage: 94%
+Threshold: 80%
+
+Autoscaling not triggered
+Pods running: 2
+Recommended pods: 5
+
+2026-05-04T14:22:15Z ERROR Database connection timeout
+Host: db-prod.internal
+Port: 5432
+Retries attempted: 5
+
+Error: could not connect to server: Connection timed out
