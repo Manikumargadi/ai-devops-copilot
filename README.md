@@ -70,5 +70,17 @@ Log Analysis + Severity Detection + Recommendations
   ↓
 Structured Output + Downloadable Report
 
+## Screenshots
+
+### Home Page
+![Home Page](screenshots/home.png)
+
+### Log Upload Workflow
+![Log Upload](screenshots/upload.png)
+
+### AI Analysis Result
+![Analysis Result](screenshots/analysis.png)
+
+
 
 
