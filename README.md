@@ -70,23 +70,5 @@ Log Analysis + Severity Detection + Recommendations
   ↓
 Structured Output + Downloadable Report
 
-## Screenshots
-
-### Home Page
-Shows the main interface with request tracking, log upload, and chat assistant.
-
-<img width="947" height="736" alt="screenshots:home" src="https://github.com/user-attachments/assets/9e42215e-52d7-4613-b51f-3018f2676842" />
-
-
-### Log Upload Workflow
-Example of uploading an infrastructure log file before running automated analysis.
-
-<img width="850" height="742" alt="screenshots:upload" src="https://github.com/user-attachments/assets/c8ce0ca5-e64a-4988-9f1e-232e9f743ebf" />
-
-
-### AI Analysis Result
-Structured output including issue summary, root cause, severity, recommended fix, and downloadable reports.
-
-<img width="828" height="636" alt="screenshots:analysis" src="https://github.com/user-attachments/assets/331c965c-2226-4eae-be2d-e5a871a207ed" />
 
 
