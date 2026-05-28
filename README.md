@@ -70,6 +70,8 @@ Log Analysis + Severity Detection + Recommendations
   ↓
 Structured Output + Downloadable Report
 
+---
+
 ## Screenshots
 
 ### Home Page
@@ -80,6 +82,10 @@ Structured Output + Downloadable Report
 
 ### AI Analysis Result
 ![Analysis Result](screenshots/analysis.png)
+
+
+
+
 
 
 
