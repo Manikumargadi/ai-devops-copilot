@@ -59,6 +59,7 @@ This project can be used for scenarios like:
 ---
 
 ## Architecture
+
 ```text
 User
   ↓
@@ -69,8 +70,7 @@ OpenAI API
 Log Analysis + Severity Detection + Recommendations
   ↓
 Structured Output + Downloadable Report
-
----
+```
 
 ## Screenshots
 
