@@ -1,7 +1,7 @@
 # 🚀 AI DevOps Copilot
 
 ## Live Demo
-[Try the app here](YOUR_STREAMLIT_APP_LINK)
+[Try the app here](https://ai-devops-copilot.streamlit.app)
 
 ## Source Code
 [View the GitHub Repository](https://github.com/Manikumargadi/ai-devops-copilot)
