@@ -4,11 +4,17 @@ from openai import OpenAI
 import os
 import json
 
-# Load environment variables
 load_dotenv()
 
-# OpenAI client
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+api_key = os.getenv("OPENAI_API_KEY")
+
+try:
+    if not api_key:
+        api_key = st.secrets["OPENAI_API_KEY"]
+except Exception:
+    pass
+
+client = OpenAI(api_key=api_key)
 
 # Page config
 st.set_page_config(
@@ -17,7 +23,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Request limit
+# Session state
 if "request_count" not in st.session_state:
     st.session_state.request_count = 0
 
@@ -109,8 +115,8 @@ div.stButton > button:hover {
 </style>
 """, unsafe_allow_html=True)
 
-# Format analysis output
-def format_output(result):
+# Output formatter
+def format_output(result: str) -> None:
     sections = result.split("\n")
 
     for line in sections:
@@ -130,11 +136,20 @@ def format_output(result):
         elif "Issue Summary" in line:
             st.markdown(f"<div class='card'><b>📌 {line}</b></div>", unsafe_allow_html=True)
 
-        elif "Root Cause" in line:
+        elif "Root Cause" in line or "Likely Root Cause" in line:
             st.markdown(f"<div class='card'><b>🧠 {line}</b></div>", unsafe_allow_html=True)
 
         elif "Recommended Fix" in line:
             st.markdown(f"<div class='card'><b>🛠️ {line}</b></div>", unsafe_allow_html=True)
+
+        elif "Kubernetes Checks" in line:
+            st.markdown(f"<div class='card'><b>✅ {line}</b></div>", unsafe_allow_html=True)
+
+        elif "Suggested kubectl Commands" in line:
+            st.markdown(f"<div class='card'><b>💻 {line}</b></div>", unsafe_allow_html=True)
+
+        elif "Runbook Steps" in line:
+            st.markdown(f"<div class='card'><b>📋 {line}</b></div>", unsafe_allow_html=True)
 
         else:
             st.markdown(f"<div class='card'>{line}</div>", unsafe_allow_html=True)
@@ -143,13 +158,15 @@ def format_output(result):
 st.markdown("<h1 style='text-align:center;'>🚀 AI DevOps Copilot</h1>", unsafe_allow_html=True)
 st.markdown("<p style='text-align:center; font-size:18px;'>Analyze logs. Detect issues. Fix faster.</p>", unsafe_allow_html=True)
 
-# Request usage display
+# Request counter
 st.markdown(
     f"<div class='request-box'>Requests used: {st.session_state.request_count}/{MAX_REQUESTS}</div>",
     unsafe_allow_html=True
 )
 
-# Upload section
+# -------------------------------
+# Upload Log Analysis Section
+# -------------------------------
 st.subheader("📂 Upload Log File")
 
 uploaded_file = st.file_uploader("Upload your log file", type=["txt", "log"])
@@ -203,7 +220,81 @@ Logs:
                 mime="application/json"
             )
 
-# Chat section
+# -------------------------------
+# Kubernetes Troubleshooting Agent
+# -------------------------------
+st.subheader("☸️ Kubernetes Troubleshooting Agent")
+
+k8s_issue = st.selectbox(
+    "Select Kubernetes issue type",
+    [
+        "CrashLoopBackOff",
+        "OOMKilled",
+        "ImagePullBackOff",
+        "Pending Pod",
+        "Service / DNS Issue",
+        "Deployment Failure"
+    ]
+)
+
+k8s_input = st.text_area(
+    "Paste pod logs, kubectl describe output, or Kubernetes error message",
+    height=200,
+    key="k8s_input"
+)
+
+if st.button("🔍 Analyze Kubernetes Issue"):
+    if st.session_state.request_count >= MAX_REQUESTS:
+        st.error("Usage limit reached for this session.")
+        st.stop()
+
+    if k8s_input.strip():
+        with st.spinner("Analyzing Kubernetes issue..."):
+            prompt = f"""
+You are an expert Kubernetes SRE assistant.
+
+The user is facing this Kubernetes issue type:
+{k8s_issue}
+
+Here is the Kubernetes input:
+{k8s_input}
+
+Return output in this format:
+
+Issue Summary: <short summary>
+Likely Root Cause: <root cause>
+Kubernetes Checks: <what to verify>
+Suggested kubectl Commands: <commands to run>
+Recommended Fix: <recommended fix>
+Runbook Steps:
+1. <step 1>
+2. <step 2>
+3. <step 3>
+"""
+
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[{"role": "user", "content": prompt}]
+            )
+
+            st.session_state.request_count += 1
+            k8s_result = response.choices[0].message.content
+
+            st.subheader("☸️ Kubernetes Analysis Result")
+            format_output(k8s_result)
+
+            st.download_button(
+                label="📥 Download Kubernetes Report",
+                data=k8s_result,
+                file_name="kubernetes_analysis.txt",
+                mime="text/plain"
+            )
+    else:
+        st.warning("Please paste Kubernetes logs or error details.")
+
+# -------------------------------
+# Chat Section
+# -------------------------------
 st.subheader("💬 Chat with DevOps Assistant")
 
 for msg in st.session_state.messages:
