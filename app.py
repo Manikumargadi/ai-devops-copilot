@@ -1,9 +1,14 @@
+import os
+import json
+import random
+
 import streamlit as st
 from dotenv import load_dotenv
 from openai import OpenAI
-import os
-import json
 
+# --------------------------------------------------
+# Load API key
+# --------------------------------------------------
 load_dotenv()
 
 api_key = os.getenv("OPENAI_API_KEY")
@@ -14,26 +19,37 @@ try:
 except Exception:
     pass
 
+if not api_key:
+    st.error("OpenAI API key not found. Add it to your .env file or Streamlit secrets.")
+    st.stop()
+
 client = OpenAI(api_key=api_key)
 
+# --------------------------------------------------
 # Page config
+# --------------------------------------------------
 st.set_page_config(
     page_title="AI DevOps Copilot",
     layout="centered",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="collapsed",
 )
 
+# --------------------------------------------------
 # Session state
+# --------------------------------------------------
 if "request_count" not in st.session_state:
     st.session_state.request_count = 0
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-MAX_REQUESTS = 5
+MAX_REQUESTS = 10
 
-# Light theme styling
-st.markdown("""
+# --------------------------------------------------
+# Styling
+# --------------------------------------------------
+st.markdown(
+    """
 <style>
 .stApp {
     background-color: #f7f9fc;
@@ -58,10 +74,6 @@ st.markdown("""
 .critical { border-left: 5px solid #ef4444; }
 .warning { border-left: 5px solid #f59e0b; }
 .info { border-left: 5px solid #10b981; }
-
-h1, h2, h3, h4, p, label, div {
-    color: #111827 !important;
-}
 
 [data-testid="stChatMessage"] {
     background-color: white;
@@ -99,10 +111,6 @@ div.stButton > button:hover {
     color: white;
 }
 
-[data-testid="stDownloadButton"] > button {
-    border-radius: 10px;
-}
-
 .request-box {
     background-color: #eef4ff;
     border: 1px solid #dbeafe;
@@ -113,9 +121,23 @@ div.stButton > button:hover {
     font-weight: 500;
 }
 </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
-# Output formatter
+# --------------------------------------------------
+# Helpers
+# --------------------------------------------------
+def check_limit() -> None:
+    if st.session_state.request_count >= MAX_REQUESTS:
+        st.error("Usage limit reached for this session.")
+        st.stop()
+
+
+def increment_usage() -> None:
+    st.session_state.request_count += 1
+
+
 def format_output(result: str) -> None:
     sections = result.split("\n")
 
@@ -127,46 +149,99 @@ def format_output(result: str) -> None:
 
         if "Severity" in line:
             if "Critical" in line:
-                st.markdown(f"<div class='card critical'>🚨 <b>{line}</b></div>", unsafe_allow_html=True)
+                st.markdown(
+                    f"<div class='card critical'><b>🚨 {line}</b></div>",
+                    unsafe_allow_html=True,
+                )
             elif "Warning" in line:
-                st.markdown(f"<div class='card warning'>⚠️ <b>{line}</b></div>", unsafe_allow_html=True)
+                st.markdown(
+                    f"<div class='card warning'><b>⚠️ {line}</b></div>",
+                    unsafe_allow_html=True,
+                )
             else:
-                st.markdown(f"<div class='card info'>✅ <b>{line}</b></div>", unsafe_allow_html=True)
+                st.markdown(
+                    f"<div class='card info'><b>✅ {line}</b></div>",
+                    unsafe_allow_html=True,
+                )
 
-        elif "Issue Summary" in line:
-            st.markdown(f"<div class='card'><b>📌 {line}</b></div>", unsafe_allow_html=True)
+        elif "Issue Summary" in line or "Incident Summary" in line:
+            st.markdown(
+                f"<div class='card'><b>📌 {line}</b></div>",
+                unsafe_allow_html=True,
+            )
 
         elif "Root Cause" in line or "Likely Root Cause" in line:
-            st.markdown(f"<div class='card'><b>🧠 {line}</b></div>", unsafe_allow_html=True)
+            st.markdown(
+                f"<div class='card'><b>🧠 {line}</b></div>",
+                unsafe_allow_html=True,
+            )
 
         elif "Recommended Fix" in line:
-            st.markdown(f"<div class='card'><b>🛠️ {line}</b></div>", unsafe_allow_html=True)
+            st.markdown(
+                f"<div class='card'><b>🛠️ {line}</b></div>",
+                unsafe_allow_html=True,
+            )
 
         elif "Kubernetes Checks" in line:
-            st.markdown(f"<div class='card'><b>✅ {line}</b></div>", unsafe_allow_html=True)
+            st.markdown(
+                f"<div class='card'><b>✅ {line}</b></div>",
+                unsafe_allow_html=True,
+            )
 
         elif "Suggested kubectl Commands" in line:
-            st.markdown(f"<div class='card'><b>💻 {line}</b></div>", unsafe_allow_html=True)
+            st.markdown(
+                f"<div class='card'><b>💻 {line}</b></div>",
+                unsafe_allow_html=True,
+            )
 
         elif "Runbook Steps" in line:
-            st.markdown(f"<div class='card'><b>📋 {line}</b></div>", unsafe_allow_html=True)
+            st.markdown(
+                f"<div class='card'><b>📋 {line}</b></div>",
+                unsafe_allow_html=True,
+            )
+
+        elif "What Happened Internally" in line:
+            st.markdown(
+                f"<div class='card'><b>⚙️ {line}</b></div>",
+                unsafe_allow_html=True,
+            )
+
+        elif "Key Signals" in line:
+            st.markdown(
+                f"<div class='card'><b>📊 {line}</b></div>",
+                unsafe_allow_html=True,
+            )
+
+        elif "Impact" in line:
+            st.markdown(
+                f"<div class='card'><b>🎯 {line}</b></div>",
+                unsafe_allow_html=True,
+            )
 
         else:
             st.markdown(f"<div class='card'>{line}</div>", unsafe_allow_html=True)
 
-# Header
-st.markdown("<h1 style='text-align:center;'>🚀 AI DevOps Copilot</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center; font-size:18px;'>Analyze logs. Detect issues. Fix faster.</p>", unsafe_allow_html=True)
 
-# Request counter
+# --------------------------------------------------
+# Header
+# --------------------------------------------------
 st.markdown(
-    f"<div class='request-box'>Requests used: {st.session_state.request_count}/{MAX_REQUESTS}</div>",
-    unsafe_allow_html=True
+    "<h1 style='text-align:center;'>🚀 AI DevOps Copilot</h1>",
+    unsafe_allow_html=True,
+)
+st.markdown(
+    "<p style='text-align:center; font-size:18px;'>Analyze logs. Troubleshoot Kubernetes. Investigate incidents.</p>",
+    unsafe_allow_html=True,
 )
 
-# -------------------------------
-# Upload Log Analysis Section
-# -------------------------------
+st.markdown(
+    f"<div class='request-box'>Requests used: {st.session_state.request_count}/{MAX_REQUESTS}</div>",
+    unsafe_allow_html=True,
+)
+
+# --------------------------------------------------
+# 1. Log Analyzer
+# --------------------------------------------------
 st.subheader("📂 Upload Log File")
 
 uploaded_file = st.file_uploader("Upload your log file", type=["txt", "log"])
@@ -175,10 +250,8 @@ if uploaded_file:
     log_content = uploaded_file.read().decode("utf-8")
     st.text_area("📄 Uploaded Logs", log_content, height=200)
 
-    if st.button("⚡ Auto Analyze Uploaded Logs"):
-        if st.session_state.request_count >= MAX_REQUESTS:
-            st.error("Usage limit reached for this session.")
-            st.stop()
+    if st.button("⚡ Analyze Logs"):
+        check_limit()
 
         with st.spinner("Analyzing logs..."):
             prompt = f"""
@@ -195,10 +268,10 @@ Logs:
 
             response = client.chat.completions.create(
                 model="gpt-4o-mini",
-                messages=[{"role": "user", "content": prompt}]
+                messages=[{"role": "user", "content": prompt}],
             )
 
-            st.session_state.request_count += 1
+            increment_usage()
             result = response.choices[0].message.content
 
             st.subheader("🧠 Analysis Result")
@@ -208,7 +281,7 @@ Logs:
                 label="📥 Download TXT",
                 data=result,
                 file_name="analysis.txt",
-                mime="text/plain"
+                mime="text/plain",
             )
 
             json_data = json.dumps({"analysis": result}, indent=2)
@@ -217,12 +290,12 @@ Logs:
                 label="📥 Download JSON",
                 data=json_data,
                 file_name="analysis.json",
-                mime="application/json"
+                mime="application/json",
             )
 
-# -------------------------------
-# Kubernetes Troubleshooting Agent
-# -------------------------------
+# --------------------------------------------------
+# 2. Kubernetes Troubleshooting Agent
+# --------------------------------------------------
 st.subheader("☸️ Kubernetes Troubleshooting Agent")
 
 k8s_issue = st.selectbox(
@@ -233,20 +306,18 @@ k8s_issue = st.selectbox(
         "ImagePullBackOff",
         "Pending Pod",
         "Service / DNS Issue",
-        "Deployment Failure"
-    ]
+        "Deployment Failure",
+    ],
 )
 
 k8s_input = st.text_area(
     "Paste pod logs, kubectl describe output, or Kubernetes error message",
     height=200,
-    key="k8s_input"
+    key="k8s_input",
 )
 
 if st.button("🔍 Analyze Kubernetes Issue"):
-    if st.session_state.request_count >= MAX_REQUESTS:
-        st.error("Usage limit reached for this session.")
-        st.stop()
+    check_limit()
 
     if k8s_input.strip():
         with st.spinner("Analyzing Kubernetes issue..."):
@@ -274,10 +345,10 @@ Runbook Steps:
 
             response = client.chat.completions.create(
                 model="gpt-4o-mini",
-                messages=[{"role": "user", "content": prompt}]
+                messages=[{"role": "user", "content": prompt}],
             )
 
-            st.session_state.request_count += 1
+            increment_usage()
             k8s_result = response.choices[0].message.content
 
             st.subheader("☸️ Kubernetes Analysis Result")
@@ -287,23 +358,94 @@ Runbook Steps:
                 label="📥 Download Kubernetes Report",
                 data=k8s_result,
                 file_name="kubernetes_analysis.txt",
-                mime="text/plain"
+                mime="text/plain",
             )
     else:
         st.warning("Please paste Kubernetes logs or error details.")
 
-# -------------------------------
-# Chat Section
-# -------------------------------
+# --------------------------------------------------
+# 3. Incident Investigation Agent
+# --------------------------------------------------
+st.subheader("🧪 AI Incident Investigation Agent")
+
+incident_input = st.text_area(
+    "Paste logs, errors, or describe the incident",
+    height=200,
+    key="incident_input",
+)
+
+if st.button("🚀 Investigate Incident"):
+    check_limit()
+
+    if incident_input.strip():
+        with st.spinner("Investigating incident like an SRE..."):
+            cpu = random.randint(70, 98)
+            memory = random.randint(60, 95)
+
+            metrics_data = f"""
+CPU Usage: {cpu}%
+Memory Usage: {memory}%
+Pod Count: 2
+Recommended Pods: 5
+"""
+
+            prompt = f"""
+You are a senior SRE performing a Kubernetes incident investigation.
+
+Logs:
+{incident_input}
+
+Cluster Metrics:
+{metrics_data}
+
+Perform a full investigation and return:
+
+Incident Summary:
+Root Cause:
+What Happened Internally:
+Key Signals (logs + metrics correlation):
+Impact:
+Recommended Fix:
+Runbook Steps:
+1. <step 1>
+2. <step 2>
+3. <step 3>
+"""
+
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[{"role": "user", "content": prompt}],
+            )
+
+            increment_usage()
+            incident_result = response.choices[0].message.content
+
+            st.subheader("🧠 Incident Investigation Report")
+            format_output(incident_result)
+
+            st.download_button(
+                label="📥 Download Investigation Report",
+                data=incident_result,
+                file_name="incident_report.txt",
+                mime="text/plain",
+            )
+    else:
+        st.warning("Please provide logs or incident details.")
+
+# --------------------------------------------------
+# 4. Chat Assistant
+# --------------------------------------------------
 st.subheader("💬 Chat with DevOps Assistant")
 
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.write(msg["content"])
 
-user_input = st.chat_input("Ask DevOps questions...")
+user_input = st.chat_input("Ask DevOps, Kubernetes, or incident questions...")
 
 if user_input:
+    check_limit()
+
     st.session_state.messages.append({"role": "user", "content": user_input})
 
     with st.chat_message("user"):
@@ -311,16 +453,12 @@ if user_input:
 
     with st.chat_message("assistant"):
         with st.spinner("Thinking..."):
-            if st.session_state.request_count >= MAX_REQUESTS:
-                st.error("Usage limit reached for this session.")
-                st.stop()
-
             response = client.chat.completions.create(
                 model="gpt-4o-mini",
-                messages=st.session_state.messages
+                messages=st.session_state.messages,
             )
 
-            st.session_state.request_count += 1
+            increment_usage()
             reply = response.choices[0].message.content
             st.write(reply)
 
