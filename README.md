@@ -9,6 +9,10 @@
 ## Overview
 AI DevOps Copilot is a live AI-powered assistant built to help engineers analyze infrastructure and deployment logs, identify root causes, classify incident severity, and recommend actionable fixes.
 
+It also includes:
+- a **Kubernetes Troubleshooting Agent** for common cluster and workload issues
+- an **Incident Investigation Agent** that simulates SRE-style investigation by correlating logs and system signals
+
 Instead of manually scanning raw logs, users can upload log files or ask troubleshooting questions through a chat interface. The tool helps speed up debugging and makes incident investigation more structured and efficient.
 
 ## Why I Built This
@@ -24,6 +28,7 @@ The goal was to create a practical tool that feels useful in real-world operatio
 - ☸️ Troubleshoot Kubernetes issues like CrashLoopBackOff, OOMKilled, ImagePullBackOff, Pending Pods, and service/DNS failures
 - 💻 Suggest relevant `kubectl` investigation commands
 - 📋 Generate remediation-style runbook guidance
+- 🧪 Investigate incidents using logs and simulated system metrics
 - 📥 Download analysis reports as TXT or JSON
 - 🎨 Clean web interface built with Streamlit
 - 🔒 Session-based request limiting for safer API usage
@@ -64,6 +69,19 @@ This project can be used for scenarios like:
    - Runbook Steps
 4. Download the troubleshooting report
 
+## Incident Investigation Workflow
+1. Paste logs, alerts, or incident details
+2. The AI simulates an SRE-style investigation using logs and system signals
+3. The app returns:
+   - Incident Summary
+   - Root Cause
+   - What Happened Internally
+   - Key Signals
+   - Impact
+   - Recommended Fix
+   - Runbook Steps
+4. Download the incident report
+
 ## Architecture
 ```text
 User
@@ -72,6 +90,6 @@ Streamlit Web UI
   ↓
 OpenAI API
   ↓
-Log Analysis + Severity Detection + Recommendations
+Log Analysis + Kubernetes Troubleshooting + Incident Investigation
   ↓
 Structured Output + Downloadable Report
